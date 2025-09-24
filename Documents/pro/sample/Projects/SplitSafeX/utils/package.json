@@ -1,0 +1,77 @@
+{
+  "name": "@safesplitx/shared-utils",
+  "version": "1.0.0",
+  "description": "Shared utilities package for SafeSplitX monorepo",
+  "main": "index.js",
+  "keywords": [
+    "utilities",
+    "safesplitx",
+    "shared",
+    "monorepo",
+    "sanitization",
+    "validation",
+    "logging",
+    "configuration",
+    "response-formatting"
+  ],
+  "author": "SafeSplitX Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "validator": "^13.11.0",
+    "xss": "^1.0.14",
+    "winston": "^3.10.0",
+    "joi": "^17.10.2",
+    "libphonenumber-js": "^1.10.44",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.5",
+    "eslint": "^8.49.0",
+    "prettier": "^3.0.3"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.js\""
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!index.js",
+      "!**/node_modules/**",
+      "!**/coverage/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  },
+  "files": [
+    "*.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/safesplitx/monorepo.git",
+    "directory": "utils"
+  },
+  "bugs": {
+    "url": "https://github.com/safesplitx/monorepo/issues"
+  },
+  "homepage": "https://github.com/safesplitx/monorepo#readme"
+}
