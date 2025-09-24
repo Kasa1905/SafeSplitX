@@ -1,53 +1,217 @@
-# SafeSplitX Fraud Detection Module
+# SafeSplitX - Smart Group Expense Management
 
-🛡️ **Production-ready AI fraud detection for the SafeSplitX group expense sharing platform**
+� **Open-source platform for intelligent group expense sharing and fraud detection**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688.svg)](https://fastapi.tiangolo.com)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Contributors](https://img.shields.io/badge/contributors-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 
-## 🎯 Overview
+## 🎯 Project Overview
 
-The **SafeSplitX Fraud Detection Module** is an intelligent microservice that provides real-time fraud detection for group expenses using a hybrid approach combining Machine Learning models with business rule engines. Designed specifically for integration with the SafeSplitX ecosystem.
+**SafeSplitX** is a comprehensive group expense management platform that makes splitting bills fair, transparent, and secure. The platform combines intuitive expense sharing with AI-powered fraud detection to protect users and ensure accurate financial tracking.
 
-## ⚡ Quick Features
+### 🏗️ Project Components
 
-- **🤖 Hybrid AI System**: ML models + business rules (90% accuracy)
-- **🚀 Sub-200ms Response**: Real-time fraud detection API  
-- **🔍 Explainable AI**: SHAP-based explanations for every decision
-- **📦 Batch Processing**: Handle multiple expenses simultaneously
-- **🐳 Production Ready**: Docker, CI/CD, monitoring, and health checks
-- **🔗 Easy Integration**: RESTful API with comprehensive documentation
+This repository contains modular services that work together to create the complete SafeSplitX experience:
 
-## 🏗️ System Architecture
+#### 🛡️ [Fraud Detection Service](./fraud-detection-service/)
+- **AI-powered fraud detection** with 90% accuracy
+- **Real-time transaction analysis** (sub-200ms response)
+- **Explainable AI decisions** with detailed reasoning
+- **Production-ready microservice** with Docker deployment
 
-```
-Expense Input → Feature Engineering (17+ features) → ML Model → Rule Engine → Ensemble Decision → Response + Alerts
-```
+#### 📱 Frontend Application (Coming Soon)
+- **React/React Native** user interface
+- **Intuitive expense splitting** workflows
+- **Real-time notifications** and alerts
+- **Mobile-first design** for on-the-go usage
 
-## 🚀 Quick Start for SafeSplitX Integration
+#### 🔧 Backend Services (Coming Soon)
+- **User management** and authentication
+- **Group and expense management** APIs
+- **Payment processing** integration
+- **Notification and communication** services
 
-### Prerequisites
-- Python 3.10+
-- Git
-- Docker (optional)
+#### 📊 Analytics & Reporting (Coming Soon)
+- **Expense analytics** and insights
+- **Group spending patterns** analysis
+- **Financial reporting** and export tools
+- **Data visualization** dashboards
 
-### Setup
+## ✨ Key Features
 
-1. **Clone SafeSplitX Repository**
+### Current (Fraud Detection Service)
+- **🤖 Hybrid AI**: ML models + business rules (90% accuracy)
+- **🚀 Real-time Processing**: Sub-200ms fraud detection
+- **🔍 Explainable Decisions**: SHAP-based reasoning for every prediction
+- **📦 Batch Processing**: Efficient handling of multiple transactions
+- **🐳 Production Ready**: Complete Docker deployment setup
+
+### Planned (Full Platform)
+- **👥 Smart Group Management**: Automatic expense categorization and splitting
+- **💳 Multi-Payment Integration**: Credit cards, digital wallets, bank transfers
+- **📱 Cross-Platform Apps**: iOS, Android, and web applications
+- **🔔 Smart Notifications**: Real-time alerts and reminders
+- **📈 Advanced Analytics**: Spending insights and budget tracking
+- **🌍 Multi-Currency Support**: Global expense management
+
+## � Quick Start
+
+### Running the Fraud Detection Service
+
+1. **Clone Repository**
    ```bash
    git clone https://github.com/Kasa1905/SafeSplitX.git
-   cd SafeSplitX/fraud-detection-module
+   cd SafeSplitX
    ```
 
-2. **Environment Setup**
+2. **Start Fraud Detection Service**
    ```bash
+   cd fraud-detection-service
+   
+   # Using Docker (Recommended)
+   docker-compose up --build
+   
+   # Or using Python directly
+   pip install -r requirements.txt
+   python train.py
+   cd fraud_detection && python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+   ```
+
+3. **Test the Service**
+   ```bash
+   curl http://localhost:8000/health
+   ```
+
+For detailed instructions, see the [Fraud Detection Service README](./fraud-detection-service/README.md).
+
+## 📁 Project Structure
+
+```
+SafeSplitX/
+├── fraud-detection-service/          # AI fraud detection microservice
+│   ├── fraud_detection/              # Main service package
+│   ├── tests/                        # Service-specific tests
+│   ├── scripts/                      # Utility scripts
+│   ├── Dockerfile                    # Container configuration
+│   └── README.md                     # Service documentation
+│
+├── frontend/                         # Frontend applications (Coming Soon)
+│   ├── web/                         # React web application
+│   └── mobile/                      # React Native mobile app
+│
+├── backend/                         # Backend services (Coming Soon)
+│   ├── user-service/               # User management
+│   ├── expense-service/            # Expense and group management
+│   └── payment-service/            # Payment processing
+│
+├── shared/                          # Shared utilities (Coming Soon)
+│   ├── models/                     # Common data models
+│   └── utils/                      # Shared utilities
+│
+├── docs/                           # Project documentation
+├── scripts/                        # Project-wide scripts
+├── LICENSE                         # Project license
+└── README.md                       # This file
+```
+
+## 🎯 Roadmap
+
+### Phase 1: Core Infrastructure ✅
+- [x] Fraud detection service
+- [x] API documentation
+- [x] Docker deployment
+- [x] Testing framework
+
+### Phase 2: Backend Services (Q1 2024)
+- [ ] User authentication service
+- [ ] Expense management API
+- [ ] Group management system
+- [ ] Payment integration
+
+### Phase 3: Frontend Development (Q2 2024)
+- [ ] React web application
+- [ ] React Native mobile app
+- [ ] User dashboard
+- [ ] Expense splitting interface
+
+### Phase 4: Advanced Features (Q3-Q4 2024)
+- [ ] Advanced analytics
+- [ ] Multi-currency support
+- [ ] Third-party integrations
+- [ ] Enhanced fraud detection
+
+## 🛠️ Development
+
+### Contributing to SafeSplitX
+
+We welcome contributions to any part of the SafeSplitX platform! Here's how to get started:
+
+1. **Choose Your Area**:
+   - **Fraud Detection**: Improve ML models, add features
+   - **Backend Services**: Build new APIs and services  
+   - **Frontend**: Create user interfaces
+   - **Documentation**: Help others understand and use SafeSplitX
+
+2. **Development Setup**:
+   ```bash
+   git clone https://github.com/Kasa1905/SafeSplitX.git
+   cd SafeSplitX
+   
+   # For fraud detection service
+   cd fraud-detection-service
    python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
+   source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-3. **Configure & Initialize**
+3. **Make Changes**:
+   - Create a feature branch
+   - Follow coding standards
+   - Add tests for new features
+   - Update documentation
+
+4. **Submit Contribution**:
+   - Open a pull request
+   - Describe your changes clearly
+   - Ensure all tests pass
+
+For detailed guidelines, see our [Contributing Guide](./fraud-detection-service/CONTRIBUTING.md).
+
+## 📚 Documentation
+
+- **[Fraud Detection Service](./fraud-detection-service/README.md)** - Complete fraud detection documentation
+- **[API Reference](./fraud-detection-service/API_DOCUMENTATION.md)** - REST API documentation
+- **[Deployment Guide](./fraud-detection-service/DEPLOYMENT.md)** - Production deployment
+- **[Project Structure](./fraud-detection-service/PROJECT_STRUCTURE.md)** - Code organization
+
+## 🤝 Team & Community
+
+### Current Contributors
+- **AI/ML Team**: Fraud detection and machine learning
+- **Backend Team**: Service architecture and APIs
+- **Frontend Team**: User interface and experience
+- **DevOps Team**: Infrastructure and deployment
+
+### Join Our Community
+- 🐛 **Report Issues**: Found a bug? Open an issue
+- 💡 **Feature Requests**: Have ideas? We'd love to hear them
+- 📝 **Documentation**: Help improve our docs
+- 💬 **Discussions**: Join project discussions
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support & Contact
+
+- **Issues**: [GitHub Issues](https://github.com/Kasa1905/SafeSplitX/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Kasa1905/SafeSplitX/discussions)
+- **Email**: [Project Contact](mailto:support@safesplitx.com)
+
+---
+
+**Made with ❤️ by the SafeSplitX Team** | Making group expenses safe, smart, and simple
    ```bash
    cp .env.example .env
    python scripts/generate_sample_data.py
