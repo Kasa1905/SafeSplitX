@@ -1,0 +1,73 @@
+# Example docker-compose integration for main SafeSplitX project
+version: '3.8'
+
+services:
+  # Your existing services (database, redis, etc.)
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: safesplitx
+      POSTGRES_USER: safesplitx
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Main SafeSplitX application
+  safesplitx-api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://safesplitx:password@postgres:5432/safesplitx
+      - REDIS_URL=redis://redis:6379
+      - FRAUD_DETECTION_URL=http://fraud-detection:8000
+    depends_on:
+      - postgres
+      - redis
+      - fraud-detection
+
+  # Fraud Detection Service (ADD THIS)
+  fraud-detection:
+    build: ./fraud-detection-service
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=info
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - fraud_models:/app/models
+      - fraud_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - safesplitx-api
+      - fraud-detection
+
+volumes:
+  postgres_data:
+  fraud_models:
+  fraud_logs:
+
+networks:
+  default:
+    name: safesplitx-network

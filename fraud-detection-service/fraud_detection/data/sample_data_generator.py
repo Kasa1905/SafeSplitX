@@ -15,7 +15,18 @@ logger = logging.getLogger(__name__)
 
 class SampleDataGenerator:
     """
-    Generates synthetic expense data for training and testing fraud detection models.
+    Generates synthetic expense data for train        if is_fraud:
+            # Fraudulent transactions more likely at odd hours
+            probs = [0.08]*6 + [0.02]*6 + [0.02]*6 + [0.04]*6  # Late night/early morning peak
+            probs = np.array(probs) / np.sum(probs)  # Normalize to sum to 1
+            hour = np.random.choice(list(range(24)), p=probs)
+            minute = np.random.randint(0, 60)
+        else:
+            # Normal transactions mostly during business hours
+            probs = [0.01]*6 + [0.05]*6 + [0.15]*6 + [0.05]*6  # Peak 6-18
+            probs = np.array(probs) / np.sum(probs)  # Normalize to sum to 1
+            hour = np.random.choice(list(range(24)), p=probs)
+            minute = np.random.randint(0, 60)g fraud detection models.
     """
     
     def __init__(self, seed: int = 42):
@@ -355,17 +366,15 @@ class SampleDataGenerator:
             minute = np.random.randint(0, 60)
         elif is_fraud:
             # Fraud transactions slightly more likely outside business hours
-            hour = np.random.choice(
-                list(range(24)),
-                p=[0.02]*6 + [0.08]*6 + [0.12]*6 + [0.08]*6  # Higher prob 6-18
-            )
+            probs = [0.02]*6 + [0.08]*6 + [0.12]*6 + [0.08]*6  # Higher prob 6-18
+            probs = np.array(probs) / np.sum(probs)  # Normalize to sum to 1
+            hour = np.random.choice(list(range(24)), p=probs)
             minute = np.random.randint(0, 60)
         else:
             # Normal transactions mostly during business hours
-            hour = np.random.choice(
-                list(range(24)),
-                p=[0.01]*6 + [0.05]*6 + [0.15]*6 + [0.05]*6  # Peak 6-18
-            )
+            probs = [0.01]*6 + [0.05]*6 + [0.15]*6 + [0.05]*6  # Peak 6-18
+            probs = np.array(probs) / np.sum(probs)  # Normalize to sum to 1
+            hour = np.random.choice(list(range(24)), p=probs)
             minute = np.random.randint(0, 60)
         
         return random_date.replace(hour=hour, minute=minute, second=0, microsecond=0)

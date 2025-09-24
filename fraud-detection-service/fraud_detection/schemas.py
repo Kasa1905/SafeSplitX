@@ -114,3 +114,32 @@ class FraudAlert(BaseModel):
     anomaly: Dict[str, Any] = Field(..., description="Anomaly detection results")
     model_version: str = Field(..., description="Model version used")
     timestamp: str = Field(..., description="Alert timestamp")
+
+
+class SimpleExpenseIn(BaseModel):
+    """Simplified expense schema for demo/frontend use."""
+    amount: float = Field(..., gt=0, description="Transaction amount")
+    merchant_category: str = Field(..., description="Merchant category")
+    time_of_transaction: str = Field(..., description="Time of transaction (HH:MM)")
+    location: str = Field(..., description="Transaction location")
+    payment_method: str = Field(..., description="Payment method")
+    user_id: str = Field(default="demo_user", description="User ID")
+    merchant_name: Optional[str] = Field(None, description="Merchant name")
+    
+    # Optional fields for compatibility
+    category: Optional[str] = Field(None, description="Alternative category field")
+    timestamp: Optional[str] = Field(None, description="Full timestamp")
+    participants: Optional[List[str]] = Field(None, description="Simple participant list")
+    group_id: Optional[str] = Field(None, description="Group ID")
+    split_method: Optional[str] = Field(None, description="Split method")
+
+
+class SimplePredictionResponse(BaseModel):
+    """Simplified response schema for demo/frontend use."""
+    is_fraud: bool
+    fraud_probability: float
+    risk_level: str
+    confidence: float
+    explanation: str
+    feature_importance: Dict[str, float]
+    processing_time: float
