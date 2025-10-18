@@ -1,0 +1,352 @@
+[
+  {
+    "_id": "64a1b2c3d4e5f6789abcde20",
+    "description": "Hotel accommodation",
+    "amount": 250.00,
+    "currency": "USD",
+    "category": "accommodation",
+    "date": "2024-01-15T18:00:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde10",
+    "paidBy": "64a1b2c3d4e5f6789abcdef0",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef0",
+        "amount": 83.33,
+        "percentage": 33.33
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef1",
+        "amount": 83.33,
+        "percentage": 33.33
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef3",
+        "amount": 83.34,
+        "percentage": 33.34
+      }
+    ],
+    "status": "approved",
+    "tags": ["vacation", "accommodation"],
+    "notes": "Mountain resort hotel for weekend trip",
+    "receiptUrl": "https://receipts.example.com/hotel_receipt_001.pdf",
+    "createdAt": "2024-01-15T18:30:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde21",
+    "description": "Gas for road trip",
+    "amount": 45.60,
+    "currency": "USD",
+    "category": "transportation",
+    "date": "2024-01-15T14:30:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde10",
+    "paidBy": "64a1b2c3d4e5f6789abcdef1",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef0",
+        "amount": 15.20,
+        "percentage": 33.33
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef1",
+        "amount": 15.20,
+        "percentage": 33.33
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef3",
+        "amount": 15.20,
+        "percentage": 33.34
+      }
+    ],
+    "status": "approved",
+    "tags": ["vacation", "transportation"],
+    "notes": "Gas station fill-up before mountain trip",
+    "receiptUrl": null,
+    "createdAt": "2024-01-15T14:45:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde22",
+    "description": "Team lunch at Italian restaurant",
+    "amount": 120.50,
+    "currency": "EUR",
+    "category": "food",
+    "date": "2024-01-20T12:30:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde11",
+    "paidBy": "64a1b2c3d4e5f6789abcdef1",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef1",
+        "amount": 30.13,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 30.13,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef6",
+        "amount": 30.12,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef7",
+        "amount": 30.12,
+        "percentage": 25.00
+      }
+    ],
+    "status": "approved",
+    "tags": ["business", "food"],
+    "notes": "Weekly team lunch meeting",
+    "receiptUrl": "https://receipts.example.com/lunch_001.jpg",
+    "createdAt": "2024-01-20T13:00:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde23",
+    "description": "Electricity bill",
+    "amount": 85.00,
+    "currency": "GBP",
+    "category": "utilities",
+    "date": "2024-01-15T09:00:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde12",
+    "paidBy": "64a1b2c3d4e5f6789abcdef2",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef2",
+        "amount": 51.00,
+        "percentage": 60.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef8",
+        "amount": 34.00,
+        "percentage": 40.00
+      }
+    ],
+    "status": "pending",
+    "tags": ["utilities", "monthly"],
+    "notes": "January electricity bill - split based on room size",
+    "receiptUrl": "https://receipts.example.com/electric_jan.pdf",
+    "createdAt": "2024-01-15T09:30:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde24",
+    "description": "Study books and supplies",
+    "amount": 89.99,
+    "currency": "USD",
+    "category": "education",
+    "date": "2024-02-01T15:20:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde13",
+    "paidBy": "64a1b2c3d4e5f6789abcdef3",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef3",
+        "amount": 22.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 22.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef8",
+        "amount": 22.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdefb",
+        "amount": 22.49,
+        "percentage": 25.00
+      }
+    ],
+    "status": "approved",
+    "tags": ["education", "books"],
+    "notes": "Textbooks for advanced calculus course",
+    "receiptUrl": "https://receipts.example.com/books_feb.jpg",
+    "createdAt": "2024-02-01T15:45:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde25",
+    "description": "Suspicious large purchase",
+    "amount": 2500.00,
+    "currency": "USD",
+    "category": "electronics",
+    "date": "2024-02-01T03:45:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde13",
+    "paidBy": "64a1b2c3d4e5f6789abcdefb",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef3",
+        "amount": 625.00,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 625.00,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef8",
+        "amount": 625.00,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdefb",
+        "amount": 625.00,
+        "percentage": 25.00
+      }
+    ],
+    "status": "pending",
+    "tags": ["electronics", "urgent"],
+    "notes": "Laptop purchase for group project",
+    "receiptUrl": null,
+    "createdAt": "2024-02-01T04:00:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde26",
+    "description": "Flight tickets",
+    "amount": 1200.00,
+    "currency": "INR",
+    "category": "transportation",
+    "date": "2024-01-25T16:00:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde14",
+    "paidBy": "64a1b2c3d4e5f6789abcdef4",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef4",
+        "amount": 600.00,
+        "percentage": 50.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdefa",
+        "amount": 300.00,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef9",
+        "amount": 300.00,
+        "percentage": 25.00
+      }
+    ],
+    "status": "approved",
+    "tags": ["vacation", "transportation"],
+    "notes": "Return flight tickets for Goa vacation",
+    "receiptUrl": "https://receipts.example.com/flights_goa.pdf",
+    "createdAt": "2024-01-25T16:30:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde27",
+    "description": "Pizza and drinks",
+    "amount": 65.30,
+    "currency": "USD",
+    "category": "food",
+    "date": "2024-01-30T19:30:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde15",
+    "paidBy": "64a1b2c3d4e5f6789abcdef6",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef6",
+        "amount": 13.06,
+        "percentage": 20.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef7",
+        "amount": 13.06,
+        "percentage": 20.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef0",
+        "amount": 13.06,
+        "percentage": 20.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef1",
+        "amount": 13.06,
+        "percentage": 20.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 13.06,
+        "percentage": 20.00
+      }
+    ],
+    "status": "approved",
+    "tags": ["entertainment", "food"],
+    "notes": "Game night refreshments",
+    "receiptUrl": null,
+    "createdAt": "2024-01-30T20:00:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde28",
+    "description": "Duplicate lunch expense",
+    "amount": 120.50,
+    "currency": "EUR",
+    "category": "food",
+    "date": "2024-01-20T12:30:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde11",
+    "paidBy": "64a1b2c3d4e5f6789abcdef1",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef1",
+        "amount": 30.13,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 30.13,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef6",
+        "amount": 30.12,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef7",
+        "amount": 30.12,
+        "percentage": 25.00
+      }
+    ],
+    "status": "pending",
+    "tags": ["business", "food"],
+    "notes": "Team lunch at Italian restaurant - duplicate entry",
+    "receiptUrl": "https://receipts.example.com/lunch_001.jpg",
+    "createdAt": "2024-01-20T13:05:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde29",
+    "description": "Late night expensive dinner",
+    "amount": 450.00,
+    "currency": "USD",
+    "category": "food",
+    "date": "2024-02-01T23:45:00.000Z",
+    "groupId": "64a1b2c3d4e5f6789abcde13",
+    "paidBy": "64a1b2c3d4e5f6789abcdef8",
+    "splits": [
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef3",
+        "amount": 112.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef5",
+        "amount": 112.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdef8",
+        "amount": 112.50,
+        "percentage": 25.00
+      },
+      {
+        "userId": "64a1b2c3d4e5f6789abcdefb",
+        "amount": 112.50,
+        "percentage": 25.00
+      }
+    ],
+    "status": "pending",
+    "tags": ["food", "expensive"],
+    "notes": "Fine dining after study session",
+    "receiptUrl": null,
+    "createdAt": "2024-02-02T00:15:00.000Z"
+  }
+]

@@ -1,0 +1,458 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip test suite'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: |
+        npm run test:unit
+        npm run test:integration
+        npm run test:coverage
+
+    - name: Build application
+      run: npm run build
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-ai-service:
+    runs-on: ubuntu-latest
+
+    outputs:
+      ai-image-tag: ${{ steps.ai-meta.outputs.tags }}
+      ai-image-digest: ${{ steps.ai-build.outputs.digest }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Test AI service
+      run: |
+        cd ai-service
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        pytest tests/ -v
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract AI service metadata
+      id: ai-meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ai
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+
+    - name: Build and push AI service Docker image
+      id: ai-build
+      uses: docker/build-push-action@v5
+      with:
+        context: ./ai-service
+        file: ./ai-service/Dockerfile
+        push: true
+        tags: ${{ steps.ai-meta.outputs.tags }}
+        labels: ${{ steps.ai-meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-ai-service]
+
+    steps:
+    - name: Run Trivy vulnerability scanner - Backend
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build-and-test.outputs.image-tag }}
+        format: 'sarif'
+        output: 'trivy-backend-results.sarif'
+
+    - name: Run Trivy vulnerability scanner - AI Service
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build-ai-service.outputs.ai-image-tag }}
+        format: 'sarif'
+        output: 'trivy-ai-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: '.'
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-ai-service, security-scan]
+    if: ${{ github.ref == 'refs/heads/main' || inputs.environment == 'staging' }}
+
+    environment:
+      name: staging
+      url: https://staging.splitsafex.com
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl for staging
+      run: |
+        echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+    - name: Deploy to staging
+      run: |
+        # Update deployment manifests with new image tags
+        sed -i "s|IMAGE_TAG|${{ needs.build-and-test.outputs.image-tag }}|g" k8s/staging/backend-deployment.yaml
+        sed -i "s|AI_IMAGE_TAG|${{ needs.build-ai-service.outputs.ai-image-tag }}|g" k8s/staging/ai-service-deployment.yaml
+        
+        # Apply configurations
+        kubectl apply -f k8s/staging/namespace.yaml
+        kubectl apply -f k8s/staging/configmap.yaml
+        kubectl apply -f k8s/staging/secrets.yaml
+        kubectl apply -f k8s/staging/database.yaml
+        kubectl apply -f k8s/staging/redis.yaml
+        kubectl apply -f k8s/staging/ai-service-deployment.yaml
+        kubectl apply -f k8s/staging/backend-deployment.yaml
+        kubectl apply -f k8s/staging/services.yaml
+        kubectl apply -f k8s/staging/ingress.yaml
+        
+        # Wait for rollout
+        kubectl rollout status deployment/splitsafex-backend -n staging
+        kubectl rollout status deployment/splitsafex-ai-service -n staging
+
+    - name: Run smoke tests on staging
+      run: |
+        # Wait for services to be ready
+        sleep 30
+        
+        # Run smoke tests
+        npm run test:smoke -- --environment=staging
+
+    - name: Notify staging deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: '🚀 Staging deployment completed successfully!'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-ai-service, security-scan, deploy-staging]
+    if: ${{ github.ref == 'refs/heads/main' && inputs.environment == 'production' || startsWith(github.ref, 'refs/tags/v') }}
+
+    environment:
+      name: production
+      url: https://splitsafex.com
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl for production
+      run: |
+        echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+    - name: Create database backup
+      run: |
+        kubectl exec -n production deployment/mongodb -- mongodump --archive --gzip > backup-$(date +%Y%m%d-%H%M%S).gz
+        
+    - name: Deploy to production with blue-green strategy
+      run: |
+        # Update deployment manifests
+        sed -i "s|IMAGE_TAG|${{ needs.build-and-test.outputs.image-tag }}|g" k8s/production/backend-deployment.yaml
+        sed -i "s|AI_IMAGE_TAG|${{ needs.build-ai-service.outputs.ai-image-tag }}|g" k8s/production/ai-service-deployment.yaml
+        
+        # Create green deployment
+        kubectl apply -f k8s/production/namespace.yaml
+        kubectl apply -f k8s/production/configmap.yaml
+        kubectl apply -f k8s/production/secrets.yaml
+        
+        # Deploy green version
+        sed 's/splitsafex-backend/splitsafex-backend-green/g' k8s/production/backend-deployment.yaml | kubectl apply -f -
+        sed 's/splitsafex-ai-service/splitsafex-ai-service-green/g' k8s/production/ai-service-deployment.yaml | kubectl apply -f -
+        
+        # Wait for green deployment
+        kubectl rollout status deployment/splitsafex-backend-green -n production
+        kubectl rollout status deployment/splitsafex-ai-service-green -n production
+        
+        # Run health checks
+        kubectl run health-check --image=curlimages/curl --rm -i --restart=Never -- \
+          curl -f http://splitsafex-backend-green:3000/health
+        
+        # Switch traffic to green
+        kubectl patch service splitsafex-backend -n production -p '{"spec":{"selector":{"app":"splitsafex-backend-green"}}}'
+        kubectl patch service splitsafex-ai-service -n production -p '{"spec":{"selector":{"app":"splitsafex-ai-service-green"}}}'
+        
+        # Wait and verify
+        sleep 60
+        
+        # Remove blue deployment
+        kubectl delete deployment splitsafex-backend -n production --ignore-not-found
+        kubectl delete deployment splitsafex-ai-service -n production --ignore-not-found
+        
+        # Rename green to primary
+        kubectl patch deployment splitsafex-backend-green -n production -p '{"metadata":{"name":"splitsafex-backend"}}'
+        kubectl patch deployment splitsafex-ai-service-green -n production -p '{"metadata":{"name":"splitsafex-ai-service"}}'
+
+    - name: Run production smoke tests
+      run: |
+        sleep 30
+        npm run test:smoke -- --environment=production
+
+    - name: Update monitoring dashboards
+      run: |
+        # Update Grafana dashboards with new deployment info
+        curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GRAFANA_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"tags":["deployment"], "text":"Production deployment completed", "time":'$(date +%s)'}' \
+          ${{ secrets.GRAFANA_URL }}/api/annotations
+
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: '🎉 Production deployment completed successfully!'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+
+    environment:
+      name: production
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+    - name: Rollback deployment
+      run: |
+        kubectl rollout undo deployment/splitsafex-backend -n production
+        kubectl rollout undo deployment/splitsafex-ai-service -n production
+        
+        kubectl rollout status deployment/splitsafex-backend -n production
+        kubectl rollout status deployment/splitsafex-ai-service -n production
+
+    - name: Verify rollback
+      run: |
+        sleep 30
+        npm run test:smoke -- --environment=production
+
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: '⚠️ Production deployment failed and was rolled back!'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  post-deployment:
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: success()
+
+    steps:
+    - name: Update release notes
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const release = await github.rest.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: `v${new Date().toISOString().slice(0,10).replace(/-/g, '.')}-${context.sha.slice(0, 7)}`,
+            name: `Production Release ${new Date().toISOString()}`,
+            body: `## 🚀 Production Deployment
+            
+            **Commit:** ${context.sha}
+            **Date:** ${new Date().toISOString()}
+            **Images:**
+            - Backend: ${{ needs.build-and-test.outputs.image-tag }}
+            - AI Service: ${{ needs.build-ai-service.outputs.ai-image-tag }}
+            
+            ## Changes
+            ${context.payload.head_commit ? context.payload.head_commit.message : 'Manual deployment'}
+            
+            ## Validation
+            - ✅ Unit tests passed
+            - ✅ Integration tests passed
+            - ✅ Security scan passed
+            - ✅ Staging deployment successful
+            - ✅ Production smoke tests passed`,
+            draft: false,
+            prerelease: false
+          });
+
+    - name: Update deployment tracking
+      run: |
+        # Update deployment tracking in monitoring system
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "deployment_id": "${{ github.run_id }}",
+            "commit": "${{ github.sha }}",
+            "environment": "production",
+            "status": "success",
+            "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+          }' \
+          ${{ secrets.DEPLOYMENT_TRACKING_URL }}
+
+    - name: Trigger post-deployment tests
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'post-deployment-tests.yml',
+            ref: 'main',
+            inputs: {
+              deployment_id: '${{ github.run_id }}',
+              environment: 'production'
+            }
+          });
+
+  notify-completion:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, post-deployment]
+    if: always()
+
+    steps:
+    - name: Send comprehensive deployment notification
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const deploymentStatus = {
+            staging: '${{ needs.deploy-staging.result }}',
+            production: '${{ needs.deploy-production.result }}',
+            postDeployment: '${{ needs.post-deployment.result }}'
+          };
+          
+          const statusEmoji = {
+            success: '✅',
+            failure: '❌',
+            cancelled: '⏹️',
+            skipped: '⏭️'
+          };
+          
+          const message = `## Deployment Summary 📋
+          
+          **Workflow:** ${context.workflow}
+          **Run ID:** ${context.runId}
+          **Commit:** ${context.sha}
+          **Branch:** ${context.ref}
+          
+          | Environment | Status |
+          |-------------|--------|
+          | Staging | ${statusEmoji[deploymentStatus.staging] || '❓'} ${deploymentStatus.staging} |
+          | Production | ${statusEmoji[deploymentStatus.production] || '❓'} ${deploymentStatus.production} |
+          | Post-Deploy | ${statusEmoji[deploymentStatus.postDeployment] || '❓'} ${deploymentStatus.postDeployment} |
+          
+          [View workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+          
+          // Send to Slack
+          console.log(message);

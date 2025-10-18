@@ -1,0 +1,211 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_ENV: test
+  MONGODB_URI: mongodb://localhost:27017/splitsafex_test
+  JWT_SECRET: test_jwt_secret_key_for_ci
+  AI_SERVICE_URL: http://localhost:8000
+  REDIS_URL: redis://localhost:6379
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        test-type: [unit, integration]
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Wait for services
+      run: |
+        echo "Waiting for MongoDB..."
+        timeout 30 bash -c 'until nc -z localhost 27017; do sleep 1; done'
+        echo "Waiting for Redis..."
+        timeout 30 bash -c 'until nc -z localhost 6379; do sleep 1; done'
+
+    - name: Run tests
+      run: npm run test:${{ matrix.test-type }}
+
+    - name: Generate test coverage
+      if: matrix.test-type == 'unit'
+      run: npm run test:coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Generate test report
+      run: |
+        npm run test:report
+        cat test-results.json
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-node-${{ matrix.node-version }}
+        path: |
+          coverage/
+          test-results.json
+          test-report.html
+
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('test-results.json')) {
+            const results = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+            const body = `## Test Results 🧪
+
+            **Node.js Version:** ${{ matrix.node-version }}
+
+            | Metric | Value |
+            |--------|-------|
+            | **Total Tests** | ${results.numTotalTests} |
+            | **Passed** | ✅ ${results.numPassedTests} |
+            | **Failed** | ❌ ${results.numFailedTests} |
+            | **Coverage** | 📊 ${results.coverageThreshold}% |
+            | **Duration** | ⏱️ ${results.testDuration}ms |
+
+            ${results.numFailedTests > 0 ? '### Failed Tests\n' + results.failedTests.map(test => `- ${test}`).join('\n') : ''}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          }
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+
+    - name: Run dependency check
+      run: |
+        npx audit-ci --moderate
+        npx better-npm-audit audit
+
+    - name: Scan for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+
+
+
+
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: always()
+
+    steps:
+    - name: Notify Slack on success
+      if: needs.test.result == 'success' && needs.security-scan.result == 'success'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: '✅ All tests passed successfully!'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Notify Slack on failure
+      if: needs.test.result == 'failure' || needs.security-scan.result == 'failure'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: '❌ Tests failed! Please check the logs.'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Create issue on test failure
+      if: needs.test.result == 'failure' && github.ref == 'refs/heads/main'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Test failure on main branch - ${new Date().toISOString()}`,
+            body: `## Test Failure Alert 🚨
+            
+            The test suite failed on the main branch.
+            
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+            **Workflow:** ${context.workflow}
+            **Run:** ${context.runNumber}
+            
+            Please investigate and fix the failing tests immediately.
+            
+            [View workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            labels: ['bug', 'urgent', 'ci-failure']
+          });

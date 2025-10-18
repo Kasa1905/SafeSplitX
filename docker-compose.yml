@@ -1,0 +1,245 @@
+version: '3.8'
+
+services:
+  # SafeSplitX AI Fraud Detection Service
+  ai-fraud-service:
+    build:
+      context: ./backend/ai
+      dockerfile: Dockerfile
+    container_name: safesplitx-ai-fraud
+    ports:
+      - "8000:8000"
+    environment:
+      # Service Configuration
+      - SERVICE_NAME=SafeSplitX AI Fraud Detection
+      - SERVICE_VERSION=1.0.0
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WORKERS=4
+      - RELOAD=false
+      
+      # Model Configuration
+      - MODEL_PATH=/app/models
+      - MODEL_VERSION=1.0.0
+      - MODEL_UPDATE_INTERVAL=3600
+      - FEATURE_CACHE_SIZE=10000
+      - BATCH_SIZE=100
+      - MAX_BATCH_SIZE=1000
+      
+      # Performance Settings
+      - REQUEST_TIMEOUT=30
+      - MAX_CONCURRENT_REQUESTS=100
+      - MEMORY_LIMIT=2GB
+      - CPU_LIMIT=2.0
+      
+      # Health Check Settings
+      - HEALTH_CHECK_INTERVAL=30
+      - HEALTH_CHECK_TIMEOUT=10
+      - HEALTH_CHECK_RETRIES=3
+      
+      # Metrics and Monitoring
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+      - PROMETHEUS_ENABLED=false
+      
+      # Database (Optional - for model storage/caching)
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL=3600
+      
+      # Security
+      - API_KEY_REQUIRED=false
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5000
+      - SECURE_HEADERS=true
+      
+      # ML Model Settings
+      - FRAUD_THRESHOLD=0.7
+      - HIGH_RISK_THRESHOLD=0.85
+      - CONFIDENCE_THRESHOLD=0.6
+      - FEATURE_SCALING=true
+      - MODEL_ENSEMBLE=true
+      
+    volumes:
+      # Mount models directory for persistence
+      - ./backend/ai/models:/app/models:rw
+      # Mount logs directory
+      - ./logs/ai:/app/logs:rw
+      # Mount config if needed
+      - ./backend/ai/config:/app/config:ro
+      
+    networks:
+      - safesplitx-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    
+    # Dependency on Redis if using caching
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Redis for caching (optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: safesplitx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - safesplitx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+  # PostgreSQL for storing fraud patterns and model metadata (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: safesplitx-postgres
+    environment:
+      POSTGRES_DB: safesplitx_ai
+      POSTGRES_USER: safesplitx
+      POSTGRES_PASSWORD: safesplitx_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/ai/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - safesplitx-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safesplitx -d safesplitx_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+  # Nginx reverse proxy (optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: safesplitx-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx:rw
+    networks:
+      - safesplitx-network
+    depends_on:
+      - ai-fraud-service
+    restart: unless-stopped
+    profiles:
+      - production
+
+  # Prometheus for metrics (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: safesplitx-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - safesplitx-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: safesplitx-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - safesplitx-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+# Networks
+networks:
+  safesplitx-network:
+    driver: bridge
+    name: safesplitx-network
+
+# Volumes
+volumes:
+  redis-data:
+    driver: local
+    name: safesplitx-redis-data
+    
+  postgres-data:
+    driver: local
+    name: safesplitx-postgres-data
+    
+  prometheus-data:
+    driver: local
+    name: safesplitx-prometheus-data
+    
+  grafana-data:
+    driver: local
+    name: safesplitx-grafana-data
+
+# Development override (docker-compose.override.yml will be used automatically)
+# For development:
+# docker-compose up
+# 
+# For production:
+# docker-compose --profile production up
+#
+# For monitoring:
+# docker-compose --profile monitoring up
+#
+# For full stack:
+# docker-compose --profile production --profile monitoring up

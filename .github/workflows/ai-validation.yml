@@ -1,0 +1,458 @@
+name: AI Service Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/ai/**'
+      - '.github/workflows/ai-validation.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/ai/**'
+      - '.github/workflows/ai-validation.yml'
+  schedule:
+    # Run AI validation twice daily
+    - cron: '0 6,18 * * *'
+
+env:
+  PYTHON_VERSION: '3.9'
+  AI_SERVICE_PORT: 8000
+  MODEL_CACHE_DIR: ~/.cache/models
+
+jobs:
+  model-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/ai/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Cache ML models
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.MODEL_CACHE_DIR }}
+        key: ${{ runner.os }}-models-${{ hashFiles('backend/ai/models/**') }}
+        restore-keys: |
+          ${{ runner.os }}-models-
+
+    - name: Install AI service dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+
+    - name: Download and validate models
+      run: |
+        cd backend/ai
+        python scripts/download_models.py --validate
+        python scripts/model_validation.py
+
+    - name: Start AI service
+      run: |
+        cd backend/ai
+        python -m uvicorn app:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} &
+        sleep 10
+        curl -f http://localhost:${{ env.AI_SERVICE_PORT }}/health
+
+    - name: Run AI service unit tests
+      run: |
+        cd backend/ai
+        pytest tests/unit/ -v --cov=. --cov-report=xml
+
+    - name: Run AI service integration tests
+      run: |
+        cd backend/ai
+        pytest tests/integration/ -v --cov-append --cov=. --cov-report=xml
+
+    - name: Validate fraud detection model
+      run: |
+        cd backend/ai
+        python tests/model_tests/test_fraud_detection.py
+
+    - name: Validate expense categorization model
+      run: |
+        cd backend/ai
+        python tests/model_tests/test_expense_categorization.py
+
+    - name: Validate pattern analysis model
+      run: |
+        cd backend/ai
+        python tests/model_tests/test_pattern_analysis.py
+
+    - name: Run model performance benchmarks
+      run: |
+        cd backend/ai
+        python tests/benchmarks/benchmark_inference.py
+        python tests/benchmarks/benchmark_batch_processing.py
+
+    - name: Upload AI service coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/ai/coverage.xml
+        flags: backend-ai
+        name: backend-ai-coverage
+
+    - name: Generate model validation report
+      run: |
+        cd backend/ai
+        python scripts/generate_validation_report.py --output validation-report.json
+
+    - name: Upload validation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ai-validation-artifacts
+        path: |
+          backend/ai/validation-report.json
+          backend/ai/benchmark-results.json
+          backend/ai/model-metrics.json
+
+  api-contract-validation:
+    runs-on: ubuntu-latest
+    needs: model-validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Start AI service
+      run: |
+        cd backend/ai
+        python -m uvicorn app:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} &
+        sleep 10
+
+    - name: Validate OpenAPI specification
+      run: |
+        curl -f http://localhost:${{ env.AI_SERVICE_PORT }}/openapi.json > backend-ai-openapi.json
+        npx swagger-codegen-cli validate -i backend-ai-openapi.json
+
+    - name: Run contract tests
+      run: |
+        cd tests/contract
+        python test_ai_service_contract.py
+
+    - name: Validate API response schemas
+      run: |
+        cd backend/ai
+        python tests/api_tests/test_response_schemas.py
+
+    - name: Check API backward compatibility
+      run: |
+        cd backend/ai
+        python scripts/check_api_compatibility.py
+
+  load-testing:
+    runs-on: ubuntu-latest
+    needs: model-validation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install locust
+
+    - name: Start AI service
+      run: |
+        cd backend/ai
+        python -m uvicorn app:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} --workers 2 &
+        sleep 15
+
+    - name: Run load tests
+      run: |
+        cd tests/load
+        locust -f locustfile.py --host http://localhost:${{ env.AI_SERVICE_PORT }} -u 50 -r 10 --run-time 60s --html load-test-report.html
+
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: tests/load/load-test-report.html
+
+    - name: Check performance thresholds
+      run: |
+        cd backend/ai
+        python scripts/check_performance_thresholds.py
+
+  security-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit safety
+
+    - name: Run security linting
+      run: |
+        cd backend/ai
+        bandit -r app/ -f json -o bandit-report.json
+
+    - name: Check for known vulnerabilities
+      run: |
+        cd backend/ai
+        safety check --json --output safety-report.json
+
+    - name: Scan for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./backend/ai
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: |
+          backend/ai/bandit-report.json
+          backend/ai/safety-report.json
+
+  model-drift-detection:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install evidently
+
+    - name: Download production data sample
+      run: |
+        cd backend/ai
+        python scripts/download_production_sample.py
+
+    - name: Detect model drift
+      run: |
+        cd backend/ai
+        python scripts/detect_model_drift.py --output drift-report.json
+
+    - name: Generate drift report
+      run: |
+        cd backend/ai
+        python scripts/generate_drift_report.py
+
+    - name: Check drift thresholds
+      run: |
+        cd backend/ai
+        python scripts/check_drift_thresholds.py
+
+    - name: Upload drift analysis
+      uses: actions/upload-artifact@v3
+      with:
+        name: drift-analysis
+        path: |
+          backend/ai/drift-report.json
+          backend/ai/drift-report.html
+
+    - name: Create issue on significant drift
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Model drift detected - ${new Date().toISOString()}`,
+            body: `## Model Drift Alert 📊
+            
+            Significant model drift has been detected in the AI service.
+            
+            **Detection Time:** ${new Date().toISOString()}
+            **Branch:** ${context.ref}
+            **Workflow:** ${context.workflow}
+            
+            Please review the drift analysis and consider model retraining.
+            
+            [View workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            labels: ['ai-service', 'model-drift', 'urgent']
+          })
+
+  end-to-end-ai-validation:
+    runs-on: ubuntu-latest
+    needs: [model-validation, api-contract-validation]
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Node.js dependencies
+      run: npm ci
+
+    - name: Install Python dependencies
+      run: |
+        cd backend/ai
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Start AI service
+      run: |
+        cd backend/ai
+        python -m uvicorn app:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} &
+        sleep 10
+
+    - name: Start backend service
+      run: |
+        npm start &
+        sleep 15
+      env:
+        NODE_ENV: test
+        AI_SERVICE_URL: http://localhost:${{ env.AI_SERVICE_PORT }}
+
+    - name: Run end-to-end AI tests
+      run: npm run test:e2e:ai
+
+    - name: Validate AI integration workflows
+      run: |
+        cd tests/e2e
+        node validate_ai_workflows.js
+
+    - name: Test AI service failover
+      run: |
+        cd tests/e2e
+        node test_ai_failover.js
+
+  notify-ai-validation:
+    runs-on: ubuntu-latest
+    needs: [model-validation, api-contract-validation, load-testing, security-validation, end-to-end-ai-validation]
+    if: always()
+
+    steps:
+    - name: Notify on AI validation success
+      if: |
+        needs.model-validation.result == 'success' &&
+        needs.api-contract-validation.result == 'success' &&
+        needs.load-testing.result == 'success' &&
+        needs.security-validation.result == 'success' &&
+        needs.end-to-end-ai-validation.result == 'success'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const comment = `## AI Service Validation ✅
+          
+          All AI validation checks have passed successfully!
+          
+          | Check | Status |
+          |-------|--------|
+          | Model Validation | ✅ Passed |
+          | API Contract | ✅ Passed |
+          | Load Testing | ✅ Passed |
+          | Security Scan | ✅ Passed |
+          | E2E Integration | ✅ Passed |
+          
+          The AI service is ready for deployment.`;
+          
+          if (context.eventName === 'pull_request') {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+
+    - name: Notify on AI validation failure
+      if: |
+        needs.model-validation.result == 'failure' ||
+        needs.api-contract-validation.result == 'failure' ||
+        needs.load-testing.result == 'failure' ||
+        needs.security-validation.result == 'failure' ||
+        needs.end-to-end-ai-validation.result == 'failure'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const failed = [];
+          if ('${{ needs.model-validation.result }}' === 'failure') failed.push('Model Validation');
+          if ('${{ needs.api-contract-validation.result }}' === 'failure') failed.push('API Contract');
+          if ('${{ needs.load-testing.result }}' === 'failure') failed.push('Load Testing');
+          if ('${{ needs.security-validation.result }}' === 'failure') failed.push('Security Scan');
+          if ('${{ needs.end-to-end-ai-validation.result }}' === 'failure') failed.push('E2E Integration');
+          
+          const comment = `## AI Service Validation ❌
+          
+          AI validation has failed. The following checks failed:
+          
+          ${failed.map(check => `- ❌ ${check}`).join('\n')}
+          
+          Please review the workflow logs and fix the issues before proceeding.`;
+          
+          if (context.eventName === 'pull_request') {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }

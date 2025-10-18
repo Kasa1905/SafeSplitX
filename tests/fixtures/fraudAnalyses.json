@@ -1,0 +1,305 @@
+[
+  {
+    "_id": "64a1b2c3d4e5f6789abcde40",
+    "expenseId": "64a1b2c3d4e5f6789abcde20",
+    "analysis": {
+      "riskScore": 0.1,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 250.00,
+      "description": "Hotel accommodation",
+      "category": "accommodation",
+      "timestamp": "2024-01-15T18:00:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef0"
+    },
+    "predictions": {
+      "legitimacy": 0.95,
+      "category_accuracy": 0.98,
+      "amount_reasonableness": 0.92
+    },
+    "recommendations": [],
+    "status": "approved",
+    "createdAt": "2024-01-15T18:35:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde41",
+    "expenseId": "64a1b2c3d4e5f6789abcde21",
+    "analysis": {
+      "riskScore": 0.15,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 45.60,
+      "description": "Gas for road trip",
+      "category": "transportation",
+      "timestamp": "2024-01-15T14:30:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef1"
+    },
+    "predictions": {
+      "legitimacy": 0.96,
+      "category_accuracy": 0.94,
+      "amount_reasonableness": 0.88
+    },
+    "recommendations": ["Request receipt for record keeping"],
+    "status": "approved",
+    "createdAt": "2024-01-15T14:50:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde42",
+    "expenseId": "64a1b2c3d4e5f6789abcde22",
+    "analysis": {
+      "riskScore": 0.05,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 120.50,
+      "description": "Team lunch at Italian restaurant",
+      "category": "food",
+      "timestamp": "2024-01-20T12:30:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef1"
+    },
+    "predictions": {
+      "legitimacy": 0.98,
+      "category_accuracy": 0.99,
+      "amount_reasonableness": 0.95
+    },
+    "recommendations": [],
+    "status": "approved",
+    "createdAt": "2024-01-20T13:05:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde43",
+    "expenseId": "64a1b2c3d4e5f6789abcde23",
+    "analysis": {
+      "riskScore": 0.25,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 85.00,
+      "description": "Electricity bill",
+      "category": "utilities",
+      "timestamp": "2024-01-15T09:00:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef2"
+    },
+    "predictions": {
+      "legitimacy": 0.93,
+      "category_accuracy": 0.97,
+      "amount_reasonableness": 0.90
+    },
+    "recommendations": ["Verify bill amount with previous months"],
+    "status": "pending",
+    "createdAt": "2024-01-15T09:35:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde44",
+    "expenseId": "64a1b2c3d4e5f6789abcde24",
+    "analysis": {
+      "riskScore": 0.2,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 89.99,
+      "description": "Study books and supplies",
+      "category": "education",
+      "timestamp": "2024-02-01T15:20:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef3"
+    },
+    "predictions": {
+      "legitimacy": 0.94,
+      "category_accuracy": 0.96,
+      "amount_reasonableness": 0.91
+    },
+    "recommendations": [],
+    "status": "approved",
+    "createdAt": "2024-02-01T15:50:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde45",
+    "expenseId": "64a1b2c3d4e5f6789abcde25",
+    "analysis": {
+      "riskScore": 0.85,
+      "riskLevel": "high",
+      "indicators": {
+        "amountAnomaly": true,
+        "duplicateCheck": false,
+        "timeAnomaly": true,
+        "behaviorAnomaly": true
+      }
+    },
+    "details": {
+      "amount": 2500.00,
+      "description": "Suspicious large purchase",
+      "category": "electronics",
+      "timestamp": "2024-02-01T03:45:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdefb"
+    },
+    "predictions": {
+      "legitimacy": 0.25,
+      "category_accuracy": 0.60,
+      "amount_reasonableness": 0.15
+    },
+    "recommendations": [
+      "Verify receipt immediately",
+      "Contact group members for confirmation",
+      "Review purchase necessity",
+      "Consider splitting into smaller expenses"
+    ],
+    "status": "flagged",
+    "createdAt": "2024-02-01T04:05:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde46",
+    "expenseId": "64a1b2c3d4e5f6789abcde26",
+    "analysis": {
+      "riskScore": 0.3,
+      "riskLevel": "medium",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 1200.00,
+      "description": "Flight tickets",
+      "category": "transportation",
+      "timestamp": "2024-01-25T16:00:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef4"
+    },
+    "predictions": {
+      "legitimacy": 0.88,
+      "category_accuracy": 0.92,
+      "amount_reasonableness": 0.85
+    },
+    "recommendations": ["Verify booking confirmation"],
+    "status": "approved",
+    "createdAt": "2024-01-25T16:35:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde47",
+    "expenseId": "64a1b2c3d4e5f6789abcde27",
+    "analysis": {
+      "riskScore": 0.1,
+      "riskLevel": "low",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": false,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 65.30,
+      "description": "Pizza and drinks",
+      "category": "food",
+      "timestamp": "2024-01-30T19:30:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef6"
+    },
+    "predictions": {
+      "legitimacy": 0.95,
+      "category_accuracy": 0.98,
+      "amount_reasonableness": 0.93
+    },
+    "recommendations": [],
+    "status": "approved",
+    "createdAt": "2024-01-30T20:05:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde48",
+    "expenseId": "64a1b2c3d4e5f6789abcde28",
+    "analysis": {
+      "riskScore": 0.75,
+      "riskLevel": "high",
+      "indicators": {
+        "amountAnomaly": false,
+        "duplicateCheck": true,
+        "timeAnomaly": false,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 120.50,
+      "description": "Duplicate lunch expense",
+      "category": "food",
+      "timestamp": "2024-01-20T12:30:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef1"
+    },
+    "predictions": {
+      "legitimacy": 0.35,
+      "category_accuracy": 0.99,
+      "amount_reasonableness": 0.95
+    },
+    "recommendations": [
+      "Verify if this is a duplicate entry",
+      "Check for similar expenses on same date",
+      "Remove duplicate if confirmed"
+    ],
+    "status": "flagged",
+    "createdAt": "2024-01-20T13:10:00.000Z"
+  },
+  {
+    "_id": "64a1b2c3d4e5f6789abcde49",
+    "expenseId": "64a1b2c3d4e5f6789abcde29",
+    "analysis": {
+      "riskScore": 0.65,
+      "riskLevel": "medium",
+      "indicators": {
+        "amountAnomaly": true,
+        "duplicateCheck": false,
+        "timeAnomaly": true,
+        "behaviorAnomaly": false
+      }
+    },
+    "details": {
+      "amount": 450.00,
+      "description": "Late night expensive dinner",
+      "category": "food",
+      "timestamp": "2024-02-01T23:45:00.000Z",
+      "paidBy": "64a1b2c3d4e5f6789abcdef8"
+    },
+    "predictions": {
+      "legitimacy": 0.55,
+      "category_accuracy": 0.95,
+      "amount_reasonableness": 0.40
+    },
+    "recommendations": [
+      "Verify receipt for expensive food expense",
+      "Check if amount is reasonable for group size",
+      "Consider splitting across multiple transactions"
+    ],
+    "status": "pending",
+    "createdAt": "2024-02-02T00:20:00.000Z"
+  }
+]

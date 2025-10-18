@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  ai-fraud-service:
+    build: .
+    image: splitsafex/ai-fraud-service:latest
+    container_name: ai-fraud-service
+    ports:
+      - "${AI_FRAUD_SERVICE_PORT:-8000}:8000"
+    environment:
+      - LOG_LEVEL=${AI_SERVICE_LOG_LEVEL:-info}
+      - MODEL_DIR=/app/models
+      - FRAUD_DETECTION_ENABLED=${FRAUD_DETECTION_ENABLED:-true}
+      - ML_MODEL_PATH=${ML_MODEL_PATH:-/app/models}
+      - FRAUD_DETECTION_THRESHOLD=${FRAUD_DETECTION_THRESHOLD:-0.7}
+      - BATCH_SIZE=${AI_BATCH_SIZE:-10}
+      - MODEL_CACHE_SIZE=${AI_MODEL_CACHE_SIZE:-100}
+      - PREDICTION_TIMEOUT=${AI_PREDICTION_TIMEOUT:-5000}
+    volumes:
+      - ./models:/app/models:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-fraud-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: splitsafex_net
+    driver: bridge
