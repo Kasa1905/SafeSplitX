@@ -176,6 +176,10 @@ router.post('/refresh', authController.refreshToken);
  * @access  Private
  */
 router.post('/logout', auth, authController.logout);
+if (typeof authController.logout !== 'function') {
+  // eslint-disable-next-line no-console
+  console.warn('authController.logout is not a function:', typeof authController.logout, authController.logout);
+}
 
 /**
  * @route   POST /api/auth/forgot-password
