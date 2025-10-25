@@ -261,7 +261,13 @@ const createTestSettlement = async (settlementData = {}) => {
     // Ensure required fields have defaults
     const fromUser = settlementData.from || (await createTestUser({ email: `settlement-from-${Date.now()}@test.com` }))._id;
     const toUser = settlementData.to || (await createTestUser({ email: `settlement-to-${Date.now()}@test.com` }))._id;
-    const testGroup = settlementData.group || (await createTestGroup({ name: `Settlement Group ${Date.now()}` }))._id;
+    
+    // Create group with createdBy
+    const testGroup = settlementData.group || (await createTestGroup({ 
+      name: `Settlement Group ${Date.now()}`,
+      createdBy: fromUser,
+      members: [fromUser, toUser]
+    }))._id;
     
     const defaultSettlement = {
       from: fromUser,
@@ -292,7 +298,13 @@ const createTestPayment = async (paymentData = {}) => {
     // Ensure required fields have defaults
     const fromUser = paymentData.from || (await createTestUser({ email: `payment-from-${Date.now()}@test.com` }))._id;
     const toUser = paymentData.to || (await createTestUser({ email: `payment-to-${Date.now()}@test.com` }))._id;
-    const testGroup = paymentData.group || (await createTestGroup({ name: `Payment Group ${Date.now()}` }))._id;
+    
+    // Create group with createdBy
+    const testGroup = paymentData.group || (await createTestGroup({ 
+      name: `Payment Group ${Date.now()}`,
+      createdBy: fromUser,
+      members: [fromUser, toUser]
+    }))._id;
     
     const defaultPayment = {
       from: fromUser,
