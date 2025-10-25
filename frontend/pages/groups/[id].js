@@ -434,7 +434,7 @@ export default function GroupDetail() {
                         Invite Members
                       </Button>
                     </div>
-                  </div>
+                  </Card>
 
                   {/* Members Preview */}
                   <Card className="p-6">
