@@ -171,8 +171,75 @@ router.post('/stripe/webhook', paymentController.handleStripeWebhook);
  */
 router.post('/paypal/webhook', paymentController.handlePayPalWebhook);
 
+/**
+ * @route   POST /api/payments
+ * @desc    Create a new payment
+ * @access  Private
+ * Note: Validation runs before auth to provide better error messages
+ */
+router.post('/',
+  body('fromUserId').custom(isValidId).withMessage('Invalid fromUserId'),
+  body('toUserId').custom(isValidId).withMessage('Invalid toUserId'),
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
+  body('currency').isIn(['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'INR']).withMessage('Invalid currency'),
+  body('groupId').custom(isValidId).withMessage('Invalid groupId'),
+  body('method').optional().isString(),
+  body('description').optional().isString(),
+  body('methodDetails').optional().isObject(),
+  handleValidationErrors,
+  auth,
+  paymentController.createPayment
+);
+
 // All other routes require authentication
 router.use(auth);
+
+/**
+ * @route   GET /api/payments
+ * @desc    Get all payments for user
+ * @access  Private
+ */
+router.get('/',
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be positive'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1-100'),
+  query('status').optional().isIn(['pending', 'completed', 'failed', 'cancelled']).withMessage('Invalid status'),
+  handleValidationErrors,
+  paymentController.getPayments
+);
+
+/**
+ * @route   GET /api/payments/:id
+ * @desc    Get payment by ID
+ * @access  Private
+ */
+router.get('/:id',
+  param('id').custom(isValidId).withMessage('Invalid payment ID'),
+  handleValidationErrors,
+  paymentController.getPaymentById
+);
+
+/**
+ * @route   PATCH /api/payments/:id/confirm
+ * @desc    Confirm a payment
+ * @access  Private
+ */
+router.patch('/:id/confirm',
+  param('id').custom(isValidId).withMessage('Invalid payment ID'),
+  handleValidationErrors,
+  paymentController.confirmPayment
+);
+
+/**
+ * @route   PATCH /api/payments/:id/cancel
+ * @desc    Cancel a payment
+ * @access  Private
+ */
+router.patch('/:id/cancel',
+  param('id').custom(isValidId).withMessage('Invalid payment ID'),
+  body('reason').optional().isString(),
+  handleValidationErrors,
+  paymentController.cancelPayment
+);
 
 /**
  * @route   POST /api/payments/stripe/setup-intent

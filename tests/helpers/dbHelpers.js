@@ -84,9 +84,10 @@ const createTestUser = async (userData = {}) => {
   try {
     
     const defaultUser = {
-      name: 'Test User',
       email: `test${Date.now()}@example.com`,
       password: 'hashedpassword123',
+      firstName: 'Test',
+      lastName: 'User',
       role: 'user',
       isActive: true,
       preferences: {
@@ -120,8 +121,27 @@ const createTestGroup = async (groupData = {}) => {
         requireReceipts: false
       }
     };
+
+    // Normalize members: allow array of userIds
+    let members = groupData.members || defaultGroup.members;
+    if (Array.isArray(members) && members.length > 0) {
+      members = members.map(m => {
+        if (m && (typeof m === 'string' || (m._id || m).toString)) {
+          const id = m._id ? m._id : m;
+          return { user: id, role: 'member', isActive: true };
+        }
+        return m; // already in expected shape
+      });
+    }
+
+    const payload = { ...defaultGroup, ...groupData, members };
+
+    // If createdBy is missing, default to first member
+    if (!payload.createdBy && Array.isArray(members) && members[0] && members[0].user) {
+      payload.createdBy = members[0].user;
+    }
     
-    const group = new Group({ ...defaultGroup, ...groupData });
+    const group = new Group(payload);
     return await group.save();
   } catch (error) {
     throw new Error(`Failed to create test group: ${error.message}`);
@@ -140,7 +160,7 @@ const createTestExpense = async (expenseData = {}) => {
       description: 'Test Expense',
       amount: 100.00,
       currency: 'USD',
-      category: 'food',
+      category: 'shopping', // valid enum value
       date: new Date(),
       splits: [],
       status: 'pending',
@@ -186,7 +206,13 @@ const createTestFraudAnalysis = async (analysisData = {}) => {
       processingTime: 250
     };
     
-    const analysis = new FraudAnalysis({ ...defaultAnalysis, ...analysisData });
+    // Ensure userId is present (required by schema)
+  const Expense = require('../../backend/models/Expense').MongoExpense || require('../../backend/models/Expense');
+  const userId = analysisData.userId || (analysisData.expenseId ? (await Expense.findById(analysisData.expenseId)).paidBy : undefined);
+    if (!userId) {
+      throw new Error('userId is required for FraudAnalysis');
+    }
+    const analysis = new FraudAnalysis({ ...defaultAnalysis, ...analysisData, userId });
     return await analysis.save();
   } catch (error) {
     throw new Error(`Failed to create test fraud analysis: ${error.message}`);
@@ -232,8 +258,15 @@ const getCollectionStats = async (collectionName) => {
  */
 const createTestSettlement = async (settlementData = {}) => {
   try {
+    // Ensure required fields have defaults
+    const fromUser = settlementData.from || (await createTestUser({ email: `settlement-from-${Date.now()}@test.com` }))._id;
+    const toUser = settlementData.to || (await createTestUser({ email: `settlement-to-${Date.now()}@test.com` }))._id;
+    const testGroup = settlementData.group || (await createTestGroup({ name: `Settlement Group ${Date.now()}` }))._id;
     
     const defaultSettlement = {
+      from: fromUser,
+      to: toUser,
+      group: testGroup,
       amount: 50.00,
       currency: 'USD',
       status: 'pending',
@@ -255,9 +288,16 @@ const createTestSettlement = async (settlementData = {}) => {
  */
 const createTestPayment = async (paymentData = {}) => {
   try {
-  // Payments are handled through settlements in this system
+    // Payments are handled through settlements in this system
+    // Ensure required fields have defaults
+    const fromUser = paymentData.from || (await createTestUser({ email: `payment-from-${Date.now()}@test.com` }))._id;
+    const toUser = paymentData.to || (await createTestUser({ email: `payment-to-${Date.now()}@test.com` }))._id;
+    const testGroup = paymentData.group || (await createTestGroup({ name: `Payment Group ${Date.now()}` }))._id;
     
     const defaultPayment = {
+      from: fromUser,
+      to: toUser,
+      group: testGroup,
       amount: 25.00,
       currency: 'USD',
       method: 'stripe',

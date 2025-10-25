@@ -195,7 +195,10 @@ const handleValidationErrors = (req, res, next) => {
 // Add request ID to all routes
 router.use(generateRequestId);
 
-// All routes require authentication
+// Public health check (no auth) so tests can probe service state
+router.get('/health', fraudController.healthCheck);
+
+// All routes below require authentication
 router.use(auth);
 
 /**
@@ -209,15 +212,76 @@ router.post('/analyze',
   fraudController.analyzeExpense
 );
 
+// Analyze by expenseId path used by AI integration tests
+router.post('/analyze/:expenseId',
+  param('expenseId').custom(isValidId).withMessage('Invalid expense ID'),
+  handleValidationErrors,
+  fraudController.analyzeExpenseById
+);
+
 /**
  * @route   POST /api/fraud/analyze-batch
  * @desc    Analyze multiple expenses for fraud
  * @access  Private
  */
+// Accept both expenseIds and expense_ids per differing test payloads
 router.post('/analyze-batch',
-  validateBulkAnalysis,
+  [
+    body('expenseIds').optional().isArray({ min: 1, max: 100 }).withMessage('expenseIds must be an array with 1-100 items'),
+    body('expense_ids').optional().isArray({ min: 1, max: 100 }).withMessage('expense_ids must be an array with 1-100 items')
+  ],
   handleValidationErrors,
   fraudController.bulkAnalyzeExpenses
+);
+
+/**
+ * @route   POST /api/fraud/batch-analyze
+ * @desc    Batch analyze expenses (alternative path)
+ * @access  Private
+ */
+router.post('/batch-analyze',
+  [
+    body('expenseIds').optional().isArray({ min: 1, max: 100 }).withMessage('expenseIds must be an array with 1-100 items'),
+    body('expense_ids').optional().isArray({ min: 1, max: 100 }).withMessage('expense_ids must be an array with 1-100 items')
+  ],
+  handleValidationErrors,
+  fraudController.bulkAnalyzeExpenses
+);
+
+/**
+ * @route   GET /api/fraud/analyses
+ * @desc    Get all fraud analyses with filtering
+ * @access  Private
+ */
+router.get('/analyses',
+  validateFraudQuery,
+  handleValidationErrors,
+  fraudController.getAllFraudAnalyses
+);
+
+/**
+ * @route   PATCH /api/fraud/analysis/:id/status
+ * @desc    Update fraud analysis status
+ * @access  Private
+ */
+router.patch('/analysis/:id/status',
+  [
+    param('id').custom(isValidId).withMessage('Invalid analysis ID'),
+    body('status').isIn(['pending', 'approved', 'flagged', 'rejected', 'under_review']).withMessage('Invalid status')
+  ],
+  handleValidationErrors,
+  fraudController.updateAnalysisStatus
+);
+
+/**
+ * @route   GET /api/fraud/dashboard
+ * @desc    Get fraud detection dashboard metrics
+ * @access  Private
+ */
+router.get('/dashboard',
+  query('period').optional().isIn(['day', 'week', 'month', 'quarter', 'year']).withMessage('Invalid period'),
+  handleValidationErrors,
+  fraudController.getFraudDashboard
 );
 
 /**

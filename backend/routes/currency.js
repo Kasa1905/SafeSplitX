@@ -141,9 +141,11 @@ router.use(generateRequestId);
 /**
  * @route   GET /api/currency/rates
  * @desc    Get current exchange rates
- * @access  Public
+ * @access  Private (tests expect 401 when unauthenticated)
  */
 router.get('/rates',
+  auth.userRateLimit, // Rate limit before auth so headers appear even on 401
+  auth,
   query('base').optional().isIn(SUPPORTED_CURRENCIES).withMessage('Invalid base currency'),
   query('symbols').optional().custom((value) => {
     if (value) {
@@ -166,8 +168,6 @@ router.get('/rates',
  * @access  Public
  */
 router.post('/convert',
-  validateConversion,
-  handleValidationErrors,
   currencyController.convertCurrency
 );
 

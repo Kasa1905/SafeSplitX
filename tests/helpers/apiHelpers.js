@@ -39,7 +39,11 @@ const expectSuccessResponse = (response, expectedData = null, method = null, pat
   
   if (expectedData) {
     expect(response.body).toHaveProperty('data');
-    expect(response.body.data).toMatchObject(expectedData);
+    if (typeof expectedData === 'function') {
+      expectedData(response.body.data);
+    } else if (typeof expectedData === 'object') {
+      expect(response.body.data).toMatchObject(expectedData);
+    }
   }
 
   // Optional contract validation if method and path are provided
@@ -132,6 +136,7 @@ const setupTestApp = () => {
   const currencyRoutes = require('../../backend/routes/currency');
   const paymentRoutes = require('../../backend/routes/payments');
   const analyticsRoutes = require('../../backend/routes/analytics');
+  const aiRoutes = require('../../backend/routes/ai');
   
   app.use('/api/auth', authRoutes);
   app.use('/api/expenses', expenseRoutes);
@@ -141,6 +146,7 @@ const setupTestApp = () => {
   app.use('/api/currency', currencyRoutes);
   app.use('/api/payments', paymentRoutes);
   app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/ai', aiRoutes);
   
   // Error handling middleware
   app.use((err, req, res, next) => {

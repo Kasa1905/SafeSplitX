@@ -76,7 +76,7 @@ if (rateLimitConfig.enabled) {
     max: rateLimitConfig.max,
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
-    legacyHeaders: false,
+    legacyHeaders: true,
   });
   app.use(limiter);
 }

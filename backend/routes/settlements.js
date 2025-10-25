@@ -186,19 +186,21 @@ const handleValidationErrors = (req, res, next) => {
 // Add request ID to all routes
 router.use(generateRequestId);
 
-// All routes require authentication
-router.use(auth);
-
 /**
  * @route   POST /api/settlements
  * @desc    Create a new settlement
  * @access  Private
+ * Note: Validation runs before auth to provide better error messages
  */
 router.post('/',
   validateCreateSettlement,
   handleValidationErrors,
+  auth,
   settlementController.createSettlement
 );
+
+// All other routes require authentication
+router.use(auth);
 
 /**
  * @route   GET /api/settlements

@@ -15,7 +15,7 @@ const SPLIT_METHODS = ['equal', 'weighted', 'percentage', 'custom'];
 // Expense categories
 const EXPENSE_CATEGORIES = [
   'food', 'transportation', 'accommodation', 'entertainment', 'shopping', 
-  'utilities', 'healthcare', 'education', 'travel', 'other'
+  'utilities', 'healthcare', 'education', 'travel', 'electronics', 'other'
 ];
 
 // MongoDB Schema using Mongoose

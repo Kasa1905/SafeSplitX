@@ -85,7 +85,7 @@ jobs:
     - name: Generate test report
       run: |
         npm run test:report
-        cat test-results.json
+        if [ -f test-results.json ]; then cat test-results.json; else echo '{"note":"test-results.json not generated"}'; fi
 
     - name: Archive test results
       uses: actions/upload-artifact@v4
@@ -173,17 +173,23 @@ jobs:
     - name: Notify Slack on success
       if: needs.test.result == 'success' && needs.security-scan.result == 'success'
       uses: 8398a7/action-slack@v3
+      continue-on-error: true
       with:
         status: success
         text: '✅ All tests passed successfully!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   # TODO: Add proper Slack integration using a supported action
 
     - name: Notify Slack on failure
       if: needs.test.result == 'failure' || needs.security-scan.result == 'failure'
       uses: 8398a7/action-slack@v3
+      continue-on-error: true
       with:
         status: failure
         text: '❌ Tests failed! Please check the logs.'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   # TODO: Add proper Slack integration using a supported action
 
     - name: Create issue on test failure

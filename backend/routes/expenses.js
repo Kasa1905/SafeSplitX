@@ -239,22 +239,39 @@ const handleValidationErrors = (req, res, next) => {
 // Add request ID to all routes
 router.use(generateRequestId);
 
-// All routes require authentication
-router.use(auth);
+/**
+ * @route   POST /api/expenses/calculate-split
+ * @desc    Calculate split amounts for an expense
+ * @access  Private
+ * Note: Validation runs before auth to provide better error messages
+ */
+router.post('/calculate-split',
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
+  body('splitType').isIn(['equal', 'weighted', 'percentage', 'custom']).withMessage('Invalid split type'),
+  body('participants').isArray({ min: 1 }).withMessage('At least one participant required'),
+  handleValidationErrors,
+  auth,
+  expenseController.calculateSplit
+);
 
 /**
  * @route   POST /api/expenses
  * @desc    Create a new expense
  * @access  Private
+ * Note: Validation runs before auth to provide better error messages
  */
 router.post('/',
   validateCreateExpense,
   handleValidationErrors,
+  auth,
   userBehaviorAnalysis,
   preExpenseCreation,
   expenseController.createExpense,
   postExpenseCreation
 );
+
+// All other routes require authentication
+router.use(auth);
 
 /**
  * @route   GET /api/expenses

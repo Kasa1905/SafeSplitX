@@ -5,7 +5,7 @@ module.exports = {
     '**/tests/unit/**/*.test.js',
     '**/tests/integration/**/*.test.js'
   ],
-  // setupFilesAfterEnv temporarily disabled
+  setupFilesAfterEnv: ['<rootDir>/tests/helpers/testSetup.js'],
   collectCoverageFrom: [
     'backend/controllers/**/*.js',
     'backend/routes/**/*.js',

@@ -177,19 +177,21 @@ const handleValidationErrors = (req, res, next) => {
 // Add request ID to all routes
 router.use(generateRequestId);
 
-// All routes require authentication
-router.use(auth);
-
 /**
  * @route   POST /api/groups
  * @desc    Create a new group
  * @access  Private
+ * Note: Validation runs before auth to provide better error messages
  */
 router.post('/',
   validateCreateGroup,
   handleValidationErrors,
+  auth,
   groupController.createGroup
 );
+
+// All other routes require authentication
+router.use(auth);
 
 /**
  * @route   GET /api/groups

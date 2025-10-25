@@ -11,6 +11,7 @@ const successResponse = (res, data = null, message = 'OK', statusCode = 200) => 
 const errorResponse = (res, message = 'Error', code = 'ERROR', details = null, statusCode = 400) => {
   return res.status(statusCode).json({ 
     success: false, 
+    error: message,
     message, 
     code, 
     details, 
