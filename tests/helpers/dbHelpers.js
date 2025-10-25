@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+// Direct MongoDB model imports to avoid needing initializeModels()
+const { MongoUser: User } = require('../../backend/models/User');
+const { MongoGroup: Group } = require('../../backend/models/Group');
+const { MongoExpense: Expense } = require('../../backend/models/Expense');
+const { MongoSettlement: Settlement } = require('../../backend/models/Settlement');
+const FraudAnalysis = require('../../backend/ai/models/FraudAnalysis');
+const FraudAlert = require('../../backend/ai/models/FraudAlert');
+const FraudRule = require('../../backend/ai/models/FraudRule');
+
 /**
  * Clear all collections in the test database
  */
@@ -19,11 +28,7 @@ const clearDatabase = async () => {
  */
 const seedDatabase = async (data = {}) => {
   try {
-    const { MongoUser: User } = require('../../backend/models/User');
-    const { MongoGroup: Group } = require('../../backend/models/Group');
-    const { MongoExpense: Expense } = require('../../backend/models/Expense');
-    const { MongoSettlement: Settlement } = require('../../backend/models/Settlement');
-    
+  // use top-level model references
     // Seed users
     if (data.users && Array.isArray(data.users)) {
       await User.insertMany(data.users);
@@ -41,19 +46,16 @@ const seedDatabase = async (data = {}) => {
     
     // Seed fraud analyses
     if (data.fraudAnalyses && Array.isArray(data.fraudAnalyses)) {
-      const FraudAnalysis = require('../../backend/ai/models/FraudAnalysis');
       await FraudAnalysis.insertMany(data.fraudAnalyses);
     }
-    
+
     // Seed fraud alerts
     if (data.fraudAlerts && Array.isArray(data.fraudAlerts)) {
-      const FraudAlert = require('../../backend/ai/models/FraudAlert');
       await FraudAlert.insertMany(data.fraudAlerts);
     }
-    
+
     // Seed fraud rules
     if (data.fraudRules && Array.isArray(data.fraudRules)) {
-      const FraudRule = require('../../backend/ai/models/FraudRule');
       await FraudRule.insertMany(data.fraudRules);
     }
     
@@ -80,9 +82,7 @@ const seedDatabase = async (data = {}) => {
  */
 const createTestUser = async (userData = {}) => {
   try {
-    const { getModels } = require('../../backend/models');
-    const models = getModels();
-    const User = models.User;
+    
     const defaultUser = {
       name: 'Test User',
       email: `test${Date.now()}@example.com`,
@@ -109,9 +109,7 @@ const createTestUser = async (userData = {}) => {
  */
 const createTestGroup = async (groupData = {}) => {
   try {
-    const { getModels } = require('../../backend/models');
-    const models = getModels();
-    const Group = models.Group;
+    
     const defaultGroup = {
       name: 'Test Group',
       description: 'A test group for integration testing',
@@ -137,9 +135,7 @@ const createTestGroup = async (groupData = {}) => {
  */
 const createTestExpense = async (expenseData = {}) => {
   try {
-    const { getModels } = require('../../backend/models');
-    const models = getModels();
-    const Expense = models.Expense;
+    
     const defaultExpense = {
       description: 'Test Expense',
       amount: 100.00,
@@ -236,9 +232,7 @@ const getCollectionStats = async (collectionName) => {
  */
 const createTestSettlement = async (settlementData = {}) => {
   try {
-    const { getModels } = require('../../backend/models');
-    const models = getModels();
-    const Settlement = models.Settlement;
+    
     const defaultSettlement = {
       amount: 50.00,
       currency: 'USD',
@@ -261,10 +255,7 @@ const createTestSettlement = async (settlementData = {}) => {
  */
 const createTestPayment = async (paymentData = {}) => {
   try {
-    // Payments are handled through settlements in this system
-    const { getModels } = require('../../backend/models');
-    const models = getModels();
-    const Settlement = models.Settlement;
+  // Payments are handled through settlements in this system
     
     const defaultPayment = {
       amount: 25.00,
