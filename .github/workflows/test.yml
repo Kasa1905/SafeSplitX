@@ -176,7 +176,7 @@ jobs:
       with:
         status: success
         text: '✅ All tests passed successfully!'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+  # TODO: Add proper Slack integration using a supported action
 
     - name: Notify Slack on failure
       if: needs.test.result == 'failure' || needs.security-scan.result == 'failure'
@@ -184,7 +184,7 @@ jobs:
       with:
         status: failure
         text: '❌ Tests failed! Please check the logs.'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+  # TODO: Add proper Slack integration using a supported action
 
     - name: Create issue on test failure
       if: needs.test.result == 'failure' && github.ref == 'refs/heads/main'
