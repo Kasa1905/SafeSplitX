@@ -32,149 +32,46 @@ SafeSplitX/
 ├── algorithms/        # Fair-split calculation algorithms
 ├── currency/          # Multi-currency support & forex
 ├── tests/             # Integration & unit tests
-└── docs/              # Documentation & API specs
-```
 
----
+# SafeSplitX — Team
 
 ## 👥 Team Responsibilities
 
 ### Team Member 1: Fraud Detection & Security 🛡️
-- **Focus**: AI-powered fraud detection algorithms
-- **Modules**: `backend/fraud/`, `middleware/security/`, `utils/encryption/`
-- **Responsibilities**:
+- Focus: AI-powered fraud detection algorithms
+- Modules: `backend/fraud/`, `middleware/security/`, `utils/encryption/`
+- Responsibilities:
   - Implement suspicious transaction detection
   - Design security middleware and authentication
   - Create encrypted data handling utilities
   - Integrate ML models for pattern recognition
 
 ### Team Member 2: Expense Management & Algorithms 📊
-- **Focus**: Core expense logic and fair-split algorithms
-- **Modules**: `algorithms/`, `backend/expenses/`, `utils/calculations/`
-- **Responsibilities**:
+- Focus: Core expense logic and fair-split algorithms
+- Modules: `algorithms/`, `backend/expenses/`, `utils/calculations/`
+- Responsibilities:
   - Develop fair-split algorithms (equal, weighted, percentage)
   - Create expense categorization and tracking
   - Implement calculation utilities and validation
   - Design expense data models and APIs
 
 ### Team Member 3: Settlement & Payment Integration 💳
-- **Focus**: Payment processing and settlement systems
-- **Modules**: `backend/settlements/`, `currency/`, `middleware/payments/`
-- **Responsibilities**:
+- Focus: Payment processing and settlement systems
+- Modules: `backend/settlements/`, `currency/`, `middleware/payments/`
+- Responsibilities:
   - Integrate multiple payment gateways (Stripe, PayPal)
   - Implement multi-currency conversion system
   - Create settlement tracking and reconciliation
   - Design payment middleware and webhooks
 
 ### Team Member 4: UI/UX & Frontend Dashboard 🎨
-- **Focus**: User interface and experience
-- **Modules**: `frontend/`, `frontend/components/`, `frontend/pages/`
-- **Responsibilities**:
+- Focus: User interface and experience
+- Modules: `frontend/`, `frontend/components/`, `frontend/pages/`
+- Responsibilities:
   - Build responsive React/Next.js dashboard
   - Create intuitive expense input interfaces
   - Design data visualization and reporting views
   - Implement real-time updates and notifications
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js**: >= 18.0.0
-- **npm**: >= 9.0.0
-- **Database**: MongoDB or PostgreSQL
-- **API Keys**: See `.env.example` for required services
-
-### Installation
-
-1. **Clone and Setup**
-   ```bash
-   git clone <repository-url>
-   cd SplitSafeX
-   cp .env.example .env
-   ```
-
-2. **Configure Environment**
-   ```bash
-   # Edit .env with your actual values
-   nano .env
-   ```
-
-3. **Install Dependencies**
-   ```bash
-   npm run install:all
-   ```
-
-4. **Start Development**
-   ```bash
-   npm run dev
-   ```
-
-   This starts both backend (port 5000) and frontend (port 3000) simultaneously.
-
-### Individual Module Development
-
-```bash
-# Backend only
-npm run dev:backend
-
-# Frontend only  
-npm run dev:frontend
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
-```
-
----
-
-## 📝 Development Workflow
-
-### 1. Branch Strategy
-```bash
-# Feature branches
-git checkout -b feature/fraud-detection-ai
-git checkout -b feature/payment-integration
-git checkout -b feature/expense-algorithms
-git checkout -b feature/dashboard-ui
-
-# Integration branch
-git checkout -b integration/team-merge
-```
-
-### 2. Commit Convention
-```bash
-git commit -m "feat(fraud): implement AI transaction analysis"
-git commit -m "fix(payments): resolve stripe webhook validation"
-git commit -m "docs(api): update expense endpoints documentation"
-```
-
-### 3. Code Integration
-- Each team member develops in their assigned modules
-- Regular integration testing using `npm run test:integration`
-- API contracts documented in `docs/API.md`
-- Shared utilities in `utils/` and `middleware/`
-
----
-
-## 📚 Documentation
-
-| Document | Purpose | Maintainer |
-|----------|---------|------------|
-| `docs/API.md` | API endpoint specifications | All team members |
-| `docs/TEAM_GUIDELINES.md` | Collaboration standards | Team Lead |
-| `docs/DEPLOYMENT.md` | Production deployment guide | DevOps |
-| `docs/TESTING.md` | Testing strategies and guides | QA Team |
-
----
-
-## 🧪 Testing Strategy
-
-SafeSplitX employs a comprehensive testing strategy with 80% code coverage requirements and multiple testing layers to ensure reliability, security, and performance.
-
-### Testing Architecture
 
 ```
 tests/
