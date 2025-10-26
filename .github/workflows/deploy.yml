@@ -86,13 +86,13 @@ jobs:
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
 
-    - name: Build and push Docker image
+    - name: Build backend Docker image
       id: build
       uses: docker/build-push-action@v5
       continue-on-error: true
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./backend
+        file: ./backend/Dockerfile
         push: false
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}

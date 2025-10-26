@@ -163,7 +163,6 @@ jobs:
     - name: Validate OpenAPI specification
       run: |
         curl -f http://localhost:${{ env.AI_SERVICE_PORT }}/openapi.json > backend-ai-openapi.json || echo "OpenAPI endpoint not available yet"
-      continue-on-error: true
 
     - name: Run contract tests
       if: false  # Disabled until contract tests are implemented
@@ -174,14 +173,12 @@ jobs:
     - name: Validate API response schemas
       run: |
         cd backend/ai
-        python tests/api_tests/test_response_schemas.py || echo "Response schema tests not yet implemented"
-      continue-on-error: true
+        python tests/api_tests/test_response_schemas.py
 
     - name: Check API backward compatibility
       run: |
         cd backend/ai
-        python scripts/check_api_compatibility.py || echo "API compatibility check not yet implemented"
-      continue-on-error: true
+        python scripts/check_api_compatibility.py
 
   load-testing:
     runs-on: ubuntu-latest
@@ -258,14 +255,23 @@ jobs:
         safety check --json --output safety-report.json || echo "Safety check skipped"
       continue-on-error: true
 
-    - name: Scan for secrets
+    - name: Scan for secrets (PR diff)
+      if: github.event_name == 'pull_request'
       uses: trufflesecurity/trufflehog@main
       continue-on-error: true
-      if: github.event_name == 'pull_request'
       with:
         path: ./backend/ai
         base: ${{ github.event.pull_request.base.sha }}
         head: ${{ github.event.pull_request.head.sha }}
+        extra_args: --only-verified
+
+    - name: Scan for secrets (full repo on push)
+      if: github.event_name != 'pull_request'
+      uses: trufflesecurity/trufflehog@main
+      continue-on-error: true
+      with:
+        path: ./backend/ai
+        extra_args: --only-verified
 
     - name: Upload security scan results
       uses: actions/upload-artifact@v4
@@ -388,33 +394,31 @@ jobs:
     - name: Start AI service
       run: |
         cd backend/ai
-        python -m uvicorn app:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} &
+        python -m uvicorn app.main:app --host 0.0.0.0 --port ${{ env.AI_SERVICE_PORT }} &
         sleep 10
-      continue-on-error: true
 
     - name: Start backend service
       run: |
         npm start &
         sleep 15
-      continue-on-error: true
       env:
         NODE_ENV: test
         AI_SERVICE_URL: http://localhost:${{ env.AI_SERVICE_PORT }}
 
     - name: Run end-to-end AI tests
-      run: npm run test:e2e:ai || echo "E2E AI tests not yet implemented"
+      run: npm run test:e2e:ai || echo "No E2E AI tests present or tests failed"
       continue-on-error: true
 
     - name: Validate AI integration workflows
       run: |
-        cd tests/e2e
-        node validate_ai_workflows.js || echo "AI workflow validation not yet implemented"
+        cd tests/e2e || exit 0
+        node validate_ai_workflows.js || echo "AI workflow validation skipped or failed"
       continue-on-error: true
 
     - name: Test AI service failover
       run: |
-        cd tests/e2e
-        node test_ai_failover.js || echo "AI failover tests not yet implemented"
+        cd tests/e2e || exit 0
+        node test_ai_failover.js || echo "AI failover test skipped or failed"
       continue-on-error: true
 
   notify-ai-validation:
