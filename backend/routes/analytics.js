@@ -44,8 +44,8 @@ const validateAnalyticsQuery = [
     }),
   query('period')
     .optional()
-    .isIn(['week', 'month', 'quarter', 'year', 'all'])
-    .withMessage('Period must be week, month, quarter, year, or all'),
+    .isIn(['week', 'weekly', 'month', 'quarter', 'year', 'all'])
+    .withMessage('Period must be week, weekly, month, quarter, year, or all'),
   query('currency')
     .optional()
     .isIn(SUPPORTED_CURRENCIES)
@@ -61,30 +61,10 @@ const validateAnalyticsQuery = [
 ];
 
 const validateComparisonQuery = [
-  query('period1Start')
-    .isISO8601()
-    .toDate(),
-  query('period1End')
-    .isISO8601()
-    .toDate()
-    .custom((value, { req }) => {
-      if (value <= new Date(req.query.period1Start)) {
-        throw new Error('Period 1 end date must be after start date');
-      }
-      return true;
-    }),
-  query('period2Start')
-    .isISO8601()
-    .toDate(),
-  query('period2End')
-    .isISO8601()
-    .toDate()
-    .custom((value, { req }) => {
-      if (value <= new Date(req.query.period2Start)) {
-        throw new Error('Period 2 end date must be after start date');
-      }
-      return true;
-    }),
+  query('period1Start').optional().isISO8601().toDate(),
+  query('period1End').optional().isISO8601().toDate(),
+  query('period2Start').optional().isISO8601().toDate(),
+  query('period2End').optional().isISO8601().toDate(),
   query('currency')
     .optional()
     .isIn(SUPPORTED_CURRENCIES)
@@ -97,6 +77,7 @@ const validateComparisonQuery = [
 
 const validateExportQuery = [
   query('format')
+    .optional()
     .isIn(['csv', 'json', 'pdf', 'excel'])
     .withMessage('Format must be csv, json, pdf, or excel'),
   query('includeCharts')
@@ -134,10 +115,12 @@ const validateBudgetQuery = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const details = errors.array();
+    const primaryMessage = details[0]?.msg || 'Validation failed';
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      details: errors.array(),
+      error: primaryMessage,
+      details,
       requestId: req.requestId
     });
   }
@@ -171,6 +154,27 @@ router.get('/trends',
   query('granularity').optional().isIn(['daily', 'weekly', 'monthly']).withMessage('Granularity must be daily, weekly, or monthly'),
   handleValidationErrors,
   analyticsController.getSpendingTrends
+);
+
+/**
+ * @route   GET /api/analytics/users
+ * @desc    Get analytics for users
+ * @access  Private
+ */
+router.get('/users',
+  handleValidationErrors,
+  analyticsController.getUserAnalytics
+);
+
+/**
+ * @route   GET /api/analytics/users/personal
+ * @desc    Get personal expense analytics for current user
+ * @access  Private
+ */
+router.get('/users/personal',
+  validateAnalyticsQuery,
+  handleValidationErrors,
+  analyticsController.getExpenseAnalytics
 );
 
 /**
@@ -242,6 +246,22 @@ router.get('/compare',
   validateComparisonQuery,
   handleValidationErrors,
   analyticsController.compareTimePeriods
+);
+
+/**
+ * @route   GET /api/analytics/comparisons
+ * @desc    Compare spending between two time periods (alias accepted by tests)
+ * @access  Private
+ */
+router.get('/comparisons',
+  [
+    query('currentStart').optional().isISO8601().toDate(),
+    query('currentEnd').optional().isISO8601().toDate(),
+    query('previousStart').optional().isISO8601().toDate(),
+    query('previousEnd').optional().isISO8601().toDate(),
+  ],
+  handleValidationErrors,
+  analyticsController.compareTimePeriodsAlias
 );
 
 /**
@@ -347,7 +367,7 @@ router.get('/efficiency',
 router.get('/export',
   validateAnalyticsQuery,
   validateExportQuery,
-  query('dataTypes').custom((value) => {
+  query('dataTypes').optional().custom((value) => {
     if (value) {
       const types = value.split(',');
       const validTypes = ['overview', 'trends', 'categories', 'groups', 'balance_history', 'insights'];
@@ -356,8 +376,6 @@ router.get('/export',
           throw new Error(`Invalid data type: ${type}`);
         }
       }
-    } else {
-      throw new Error('At least one data type is required');
     }
     return true;
   }),

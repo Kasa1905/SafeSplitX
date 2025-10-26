@@ -59,7 +59,7 @@ const validateCreateExpense = [
     .withMessage('Description must be between 1 and 200 characters'),
   body('amount')
     .isFloat({ min: 0.01 })
-    .withMessage('Amount must be greater than 0'),
+    .withMessage('Amount must be positive'),
   body('currency')
     .isIn(['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'INR'])
     .withMessage('Invalid currency'),
@@ -226,10 +226,12 @@ const validateSplitUpdate = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const details = errors.array();
+    const primaryMessage = details[0]?.msg || 'Validation failed';
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      details: errors.array(),
+      error: primaryMessage,
+      details,
       requestId: req.requestId
     });
   }
@@ -246,11 +248,11 @@ router.use(generateRequestId);
  * Note: Validation runs before auth to provide better error messages
  */
 router.post('/calculate-split',
+  auth,
   body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
   body('splitType').isIn(['equal', 'weighted', 'percentage', 'custom']).withMessage('Invalid split type'),
   body('participants').isArray({ min: 1 }).withMessage('At least one participant required'),
   handleValidationErrors,
-  auth,
   expenseController.calculateSplit
 );
 
@@ -261,9 +263,9 @@ router.post('/calculate-split',
  * Note: Validation runs before auth to provide better error messages
  */
 router.post('/',
+  auth,
   validateCreateExpense,
   handleValidationErrors,
-  auth,
   userBehaviorAnalysis,
   preExpenseCreation,
   expenseController.createExpense,
@@ -393,6 +395,13 @@ router.put('/:id/fraud-review',
  * @access  Private
  */
 router.post('/:id/approve',
+  param('id').custom(isValidId).withMessage('Invalid expense ID'),
+  handleValidationErrors,
+  expenseController.approveExpense
+);
+
+// Support PATCH method as used in tests
+router.patch('/:id/approve',
   param('id').custom(isValidId).withMessage('Invalid expense ID'),
   handleValidationErrors,
   expenseController.approveExpense

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="6" failures="0" errors="0" time="1.768">
+  <testsuite name="Test Infrastructure" errors="0" failures="0" skipped="0" timestamp="2025-10-26T13:34:52" time="1.687" tests="6">
+    <testcase classname="Test Infrastructure should run tests successfully" name="Test Infrastructure should run tests successfully" time="0.003">
+    </testcase>
+    <testcase classname="Test Infrastructure should have access to Node.js modules" name="Test Infrastructure should have access to Node.js modules" time="0.001">
+    </testcase>
+    <testcase classname="Test Infrastructure should support async operations" name="Test Infrastructure should support async operations" time="0.001">
+    </testcase>
+    <testcase classname="Test Infrastructure Basic JavaScript functionality should handle arrays" name="Test Infrastructure Basic JavaScript functionality should handle arrays" time="0.001">
+    </testcase>
+    <testcase classname="Test Infrastructure Basic JavaScript functionality should handle objects" name="Test Infrastructure Basic JavaScript functionality should handle objects" time="0.001">
+    </testcase>
+    <testcase classname="Test Infrastructure Basic JavaScript functionality should handle strings" name="Test Infrastructure Basic JavaScript functionality should handle strings" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

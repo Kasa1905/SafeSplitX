@@ -182,10 +182,12 @@ const validateRuleCreation = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const details = errors.array();
+    const primaryMessage = details[0]?.msg || 'Validation failed';
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      details: errors.array(),
+      error: primaryMessage,
+      details,
       requestId: req.requestId
     });
   }

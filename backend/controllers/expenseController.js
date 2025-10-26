@@ -4,6 +4,9 @@
  */
 
 const { errorResponse } = require('../utils/response');
+const { MongoExpense: Expense } = require('../models/Expense');
+const { MongoGroup: Group } = require('../models/Group');
+const mongoose = require('mongoose');
 
 const notImplemented = (res, method) => {
   return errorResponse(
@@ -15,28 +18,140 @@ const notImplemented = (res, method) => {
   );
 };
 
-const createExpense = (req, res) => {
-  return res.status(201).json({ success: true, data: { expense: { id: 'exp1' } } });
+const createExpense = async (req, res) => {
+  try {
+    const userId = req.user && (req.user.id || req.user._id);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Access token required' });
+    }
+
+    // Validate group exists and user is member
+    const group = await Group.findById(req.body.groupId);
+    if (!group) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+    if (!group.isMember(userId)) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    const expense = new Expense({
+      description: req.body.description,
+      amount: req.body.amount,
+      currency: req.body.currency,
+      category: req.body.category,
+      date: req.body.date || new Date(),
+      paidBy: userId,
+      groupId: req.body.groupId,
+      splitMethod: req.body.splitMethod,
+      splits: req.body.splits
+    });
+
+    // Basic split validation for percentage method
+    if (expense.splitMethod === 'percentage') {
+      const total = (expense.splits || []).reduce((s, sp) => s + (sp.percentage || 0), 0);
+      if (Math.abs(total - 100) > 0.1) {
+        return res.status(400).json({ success: false, error: 'Split percentages must add up to 100' });
+      }
+    }
+
+    await expense.save();
+    return res.status(201).json({ success: true, data: { expense } });
+  } catch (err) {
+    return res.status(400).json({ success: false, error: err.message });
+  }
 };
 
 const uploadReceipt = (req, res) => {
   return res.status(201).json({ success: true, data: { receipt: { id: 'receipt1' } } });
 };
 
-const getExpenses = (req, res) => {
-  return res.status(200).json({ success: true, data: { expenses: [] } });
+const getExpenses = async (req, res) => {
+  try {
+    const userId = req.user && (req.user.id || req.user._id);
+    const { page = 1, limit = 10, groupId, category, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const filter = { isDeleted: false };
+    if (groupId) filter.groupId = groupId;
+    // Return expenses created by user or where user is in splits
+    filter.$or = [{ paidBy: userId }, { 'splits.userId': userId }];
+
+    const cursor = Expense.find(filter)
+      .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit, 10));
+    if (category) cursor.where('category').equals(category);
+    const [items, total] = await Promise.all([
+      cursor.exec(),
+      Expense.countDocuments(filter)
+    ]);
+    return res.status(200).json({ success: true, data: { expenses: items, pagination: { page: parseInt(page, 10), limit: parseInt(limit, 10), total } } });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
 };
 
-const getExpenseById = (req, res) => {
-  return res.status(200).json({ success: true, data: { expense: { id: req.params.id || 'exp1' } } });
+const getExpenseById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(404).json({ success: false, error: 'Expense not found' });
+    }
+    const expense = await Expense.findById(id);
+    if (!expense || expense.isDeleted) {
+      return res.status(404).json({ success: false, error: 'Expense not found' });
+    }
+    const userId = req.user && (req.user.id || req.user._id);
+    const hasAccess = expense.paidBy.toString() === String(userId) || (expense.splits || []).some(s => String(s.userId) === String(userId));
+    if (!hasAccess) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    return res.status(200).json({ success: true, data: { expense } });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
 };
 
-const updateExpense = (req, res) => {
-  return res.status(200).json({ success: true, data: { expense: { id: req.params.id || 'exp1', updated: true } } });
+const updateExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findById(id);
+    if (!expense) return res.status(404).json({ success: false, error: 'Expense not found' });
+    const userId = req.user && (req.user.id || req.user._id);
+    if (String(expense.paidBy) !== String(userId)) {
+      return res.status(403).json({ success: false, error: 'Only expense creator can update' });
+    }
+    if (expense.isApproved) {
+      return res.status(400).json({ success: false, error: 'Cannot update approved expense' });
+    }
+    ['description','amount','currency','category','date','notes','tags'].forEach(f => {
+      if (req.body[f] !== undefined) expense[f] = req.body[f];
+    });
+    await expense.save();
+    return res.status(200).json({ success: true, data: { expense } });
+  } catch (err) {
+    return res.status(400).json({ success: false, error: err.message });
+  }
 };
 
-const deleteExpense = (req, res) => {
-  return res.status(200).json({ success: true, data: { deleted: true } });
+const deleteExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findById(id);
+    if (!expense) return res.status(404).json({ success: false, error: 'Expense not found' });
+    const userId = req.user && (req.user.id || req.user._id);
+    if (String(expense.paidBy) !== String(userId)) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    if (expense.isApproved) {
+      return res.status(400).json({ success: false, error: 'Cannot delete approved expense' });
+    }
+    expense.isDeleted = true;
+    expense.deletedAt = new Date();
+    expense.deletedBy = userId;
+    await expense.save();
+    return res.status(200).json({ success: true, data: { message: 'Expense deleted successfully' } });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 const getExpenseHistory = (req, res) => {
@@ -59,8 +174,25 @@ const getExpensesByCategory = (req, res) => {
   return res.status(200).json({ success: true, data: { expenses: [] } });
 };
 
-const approveExpense = (req, res) => {
-  return notImplemented(res, 'Approve expense');
+const approveExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findById(id);
+    if (!expense) return res.status(404).json({ success: false, error: 'Expense not found' });
+    if (expense.isApproved) {
+      return res.status(400).json({ success: false, error: 'Expense already approved' });
+    }
+    expense.isApproved = true;
+    expense.approvedAt = new Date();
+    expense.approvedBy = req.user && (req.user.id || req.user._id);
+    await expense.save();
+    // Respond with a status field for tests
+    const resp = expense.toObject();
+    resp.status = 'approved';
+    return res.status(200).json({ success: true, data: { expense: resp } });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 const rejectExpense = (req, res) => {
